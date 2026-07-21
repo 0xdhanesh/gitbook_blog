@@ -23,7 +23,7 @@ This particular approach will end up creating a conflict with Kali Linux's Netwo
 
 * Hard way: Manually overwriting the settings to disable the one set by the Pi Imager and kick starting the service
 
-## Hardway - Manual Over-Ride (╥﹏╥)
+### Hardway - Manual Over-Ride (╥﹏╥)
 
 Here while solving this we will take a look at Netplan, cloud-init, NetworkManager, wpa\_supplicant, interface ownership
 
@@ -65,6 +65,56 @@ We will use `nmcli` a lot
 
 During this conflict, the output of nmcli will show either `unavailable` or `unmanaged` for `wlan0`
 
+### What happens under the hood: Hardware Detection vs Network Ownership
+
+Linux Wi-Fi operation is layered. A useful troubleshooting model is:
+
+| Layer                 | Responsibility                                     | Evidence in this case                                                                       |
+| --------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Firmware and hardware | The Pi's onboard radio and firmware respond        | `wlan0` existed; no hard RF block                                                           |
+| Kernel driver         | Creates and controls the network interface         | `ip link` showed `wlan0`; the interface accepted an `UP` request                            |
+| RF policy             | Allows or blocks transmission                      | `rfkill` showed hard block: no, soft block: no                                              |
+| Supplicant            | Scans, authenticates, and associates with an AP    | Two supplicant control paths competed for `wlan0`                                           |
+| Network manager       | Chooses profiles, DHCP, routes, DNS, and lifecycle | NetworkManager reported `unavailable` because it could not acquire the supplicant interface |
+| Provisioning layer    | Generates persistent network configuration at boot | cloud-init generated Netplan YAML that recreated the conflict                               |
+The boot process currently looks like the following:
+
+```js
+cloud-init
+    |
+    v
+/etc/netplan/50-cloud-init.yaml
+    |
+    v
+Netplan renderer: networkd
+    |
+    +--> systemd-networkd (IP configuration)
+    |
+    +--> netplan-wpa-wlan0.service
+             |
+             v
+       wpa_supplicant -i wlan0 -c /run/netplan/wpa-wlan0.conf
+
+Desktop session / Kali networking defaults
+    |
+    v
+NetworkManager
+    |
+    v
+D-Bus wpa_supplicant integration attempts to acquire wlan0
+    |
+    v
+FAIL: interface already owned
+```
+
+The core problem relies in that Netplan is not a daemon that associates with Wi-Fi rather its a declarative generator. Based on the selected rendered, Netplan writes runtime configuration for a backend. Netplan's documentation explicitly notes that `systemd-networkd` does not natively implement Wi-Fi and therefore relies on `wpa_supplicant` when the `networkd` renderer handles wireless networking.
+
+This problem is avoided in Raspberry Pi by one authoritative network manager which was well maintained by the team. Ubuntu avoids it by using Netplan as its declarative network layer but the renderer is selected to match the product. Ubuntu usually delegates networking tasks to NetworkManager. The architecture in Ubuntu will be as follows:
+
+```js
+Netplan declaration -> NetworkManager renderer -> NetworkManager -> wpa_supplicant
+```
+
 ### Solution Steps
 
 The issue can be resolved by restoring the single ownership of the interface, which can be achieved by the following steps:
@@ -83,3 +133,7 @@ sudo nmcli device set wlan0 managed yes
 ``` 
 as this is only a temporary patch and when the Pi reboots we will be presented with the same issue and the command may not work for the second time
 {% endhint %}
+
+Lets see step by steps on how to fix this:
+
+<TBD>
