@@ -55,6 +55,7 @@ This confirms that the actual failure was control-plane contention: two user-spa
 Remember when we provide the information about the WiFi on the Pi Imager, it asks for the WiFi SSID and the password, those details gets stored on the "_/etc/netplan/\*.yaml_" (typically, the name of the file will be 50-cloud-init.yaml). This file contains all WiFi definition. Netplan renders that definition via **networkd** path and launches an interface specific `wpa_supplicant` process using the _/run/netplan/wpa-wlan0.conf_, at the same time the desktop expected NetworkManger to manage `wlan0`. NetworkManager could see the device, but cannot claim the interface as its own supplication integration hinders it. Thus we get the WiFi not available message from the status bar.
 
 {% hint style="info" %}
+
 Inspection Btw, the network devices can be inspected with the following command
 ```bash
 nmcli device / nmcli device show 
@@ -74,5 +75,6 @@ The issue can be resolved by restoring the single ownership of the interface, wh
 * Allow NetworkManager's single D-Bus-managed `wpa_supplicant` instance to own `wlan0`
 
 {% hint style="info" %}
+
 nmcli patch: If you search the internet / ask AI for solution do not rely only on the `sudo nmcli device set wlan0 managed yes` as this is only a temporary patch and when the Pi reboots we will be presented with the same issue and the command may not work for the second time
 {% endhint %}
