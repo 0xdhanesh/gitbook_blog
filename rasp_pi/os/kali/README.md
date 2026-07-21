@@ -77,6 +77,7 @@ Linux Wi-Fi operation is layered. A useful troubleshooting model is:
 | Supplicant            | Scans, authenticates, and associates with an AP    | Two supplicant control paths competed for `wlan0`                                           |
 | Network manager       | Chooses profiles, DHCP, routes, DNS, and lifecycle | NetworkManager reported `unavailable` because it could not acquire the supplicant interface |
 | Provisioning layer    | Generates persistent network configuration at boot | cloud-init generated Netplan YAML that recreated the conflict                               |
+
 The boot process currently looks like the following:
 
 ```js
@@ -136,4 +137,31 @@ as this is only a temporary patch and when the Pi reboots we will be presented w
 
 Lets see step by steps on how to fix this:
 
-<TBD>
+**Explanation Yet to come - too tired**
+
+Use the following script to fix it:
+```bash
+sudo mkdir -p /etc/cloud/cloud.cfg.d
+
+sudo tee /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg >/dev/null <<'EOF'
+network: {config: disabled}
+EOF
+
+sudo mv /etc/netplan/50-cloud-init.yaml \
+    /etc/netplan/50-cloud-init.yaml.disabled
+
+sudo tee /etc/netplan/01-network-manager.yaml >/dev/null <<'EOF'
+network:
+  version: 2
+  renderer: NetworkManager
+EOF
+
+sudo chmod 600 /etc/netplan/01-network-manager.yaml
+sudo netplan generate
+sudo netplan apply
+
+sudo systemctl stop netplan-wpa-wlan0.service 2>/dev/null || true
+sudo pkill -f '/run/netplan/wpa-wlan0.conf' 2>/dev/null || true
+sudo systemctl restart wpa_supplicant
+sudo systemctl restart NetworkManager
+```
