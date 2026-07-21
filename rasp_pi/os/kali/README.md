@@ -77,5 +77,9 @@ The issue can be resolved by restoring the single ownership of the interface, wh
 {% hint style="info" %}
 `nmcli` patch:
 
-If you search the internet / ask AI for solution do not rely only on the `sudo nmcli device set wlan0 managed yes` as this is only a temporary patch and when the Pi reboots we will be presented with the same issue and the command may not work for the second time
+If you search the internet / ask AI for solution do not rely only on the 
+```bash
+sudo nmcli device set wlan0 managed yes
+``` 
+as this is only a temporary patch and when the Pi reboots we will be presented with the same issue and the command may not work for the second time
 {% endhint %}
