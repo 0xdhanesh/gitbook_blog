@@ -7,5 +7,6 @@ This particular approach will end up creating a conflict with Kali Linux's Netwo
 
 ### Solutions
 - Easy way: Just **Skip Customization** and continue with flashing the SD Card / SSD. The default creds **kali:kali** will be applied with the hostname **kali-raspberrypi**
-<br>
+
+
 ![](../../../assets/Pi_Imager_Setup.png)
