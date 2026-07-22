@@ -7,11 +7,15 @@ tags:
   - Networking
 ---
 
-# Kali Linux on Raspberry Pi
+# Wireless LAN
 
 ## WiFi - Why you are doing it wrong
 
 When flashing Kali linux OS for Raspberry Pi from Pi Imager, most of us choose the standard installation process with customization option which provides us the ability to set the hostname, user management and wifi connection capabilities.
+
+{% hint style="info" %}
+If the clarification is not enough for the mentioned commands / utilities please refer to man pages.
+{% endhint %}
 
 This particular approach will end up creating a conflict with Kali Linux's NetworkManager, and we end up with a os without Wifi Capabilities, but other radio communications like Bluetooth and the physical network connection (Ethernet) will work fine
 
